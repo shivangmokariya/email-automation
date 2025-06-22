@@ -30,7 +30,7 @@ The application will start on `http://localhost:3000`
 
 ### 3. Backend Configuration
 
-Make sure the backend server is running on `http://localhost:5000` before using the application.
+The application is configured to use the live backend at `https://email-automation-purq.onrender.com`. For local development, you can modify the base URL in `src/context/AuthContext.js`.
 
 ## Application Structure
 
