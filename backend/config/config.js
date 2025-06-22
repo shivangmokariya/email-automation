@@ -11,4 +11,5 @@ module.exports = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '30d',
   cryptoKey: process.env.CRYPTO_KEY || 'your-crypto-key',
   frontendURL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  backendURL: process.env.BACKEND_URL || 'https://email-automation-purq.onrender.com',
 }; 

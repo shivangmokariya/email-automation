@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  axios.defaults.baseURL = 'http://localhost:5000/api';
+  axios.defaults.baseURL = 'https://email-automation-purq.onrender.com/api';
 
   // Add token to requests if it exists
   useEffect(() => {
