@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
@@ -18,12 +18,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Configure axios defaults
-  axios.defaults.baseURL = 'https://email-automation-purq.onrender.com/api';
+  api.defaults.baseURL = 'http://localhost:5000/api';
 
   // Add token to requests if it exists
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       try {
         const decoded = jwtDecode(token);
         setUser(decoded);
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', { email, password });
       const { token: newToken, data } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password) => {
     try {
-      const response = await axios.post('/auth/register', { name, email, password });
+      const response = await api.post('/auth/register', { name, email, password });
       const { token: newToken, data } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -75,7 +75,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
   };
 
   const value = {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { BarChart3, Mail, CheckCircle, TrendingUp, Users, Clock } from 'lucide-react';
 
 const CampaignDetails = ({ campaign }) => {
@@ -66,8 +66,8 @@ const Campaigns = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const statsPromise = axios.get('/campaigns/stats');
-        const campaignsPromise = axios.get('/campaigns');
+        const statsPromise = api.get('/campaigns/stats');
+        const campaignsPromise = api.get('/campaigns');
         
         const [statsRes, campaignsRes] = await Promise.all([statsPromise, campaignsPromise]);
         

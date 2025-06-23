@@ -18,7 +18,7 @@ const credentialSchema = new mongoose.Schema({
   },
   provider: {
     type: String,
-    enum: ['gmail', 'outlook', 'yahoo', 'other'],
+    enum: ['gmail', 'Gmail', 'outlook', 'Outlook', 'yahoo', 'Yahoo', 'other', 'Other'],
     default: 'gmail',
   },
 }, {
@@ -52,4 +52,4 @@ credentialSchema.methods.getAppPassword = function () {
 
 const Credential = mongoose.model('Credential', credentialSchema);
 
-module.exports = Credential; 
+module.exports = Credential;

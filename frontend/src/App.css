@@ -47,4 +47,37 @@
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+}
+
+/* Remove or comment out the scrollbar-none class to restore native scrollbars */
+/*
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+*/
+
+/* Custom dark scrollbar for sidebar and chat area */
+::-webkit-scrollbar {
+  width: 10px;
+  background: #18181b; /* dark background for track */
+}
+::-webkit-scrollbar-thumb {
+  background: #35363c; /* thumb color */
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6366f1; /* thumb hover color */
+}
+::-webkit-scrollbar-track {
+  background: #18181b; /* dark track */
+}
+
+/* Firefox */
+* {
+  scrollbar-color: #35363c #18181b;
+  scrollbar-width: thin;
 } 

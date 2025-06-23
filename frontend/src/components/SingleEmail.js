@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Briefcase, Building, User, Send, File as FileIcon, Eye, FileText as TemplateIcon, ChevronDown } from 'lucide-react';
+import { Mail, Briefcase, Building, User, Send, File as FileIcon, Eye, FileText as TemplateIcon, ChevronDown, Sparkles } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import CustomSelect from './CustomSelect';
 import { getAllPositions } from '../utils/positions';
@@ -49,13 +49,16 @@ const SingleEmail = () => {
     subject: '',
     content: '',
     credentialId: '',
-    templateId: ''
+    templateId: '',
+    prompt: '',
+    senderName: user?.name || ''
   });
   const [templates, setTemplates] = useState([]);
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   const [credentials, setCredentials] = useState([]);
   const [resume, setResume] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const userPositions = useMemo(() => [formData.position].filter(Boolean), [formData.position]);
   const positionOptions = useMemo(() => getAllPositions(userPositions).map(p => ({ value: p, label: p })), [userPositions]);
@@ -75,7 +78,7 @@ const SingleEmail = () => {
           { _id: '6', name: 'Frontend Application', position: 'Frontend Developer', subject: 'Frontend Developer Role at {{company}}', content: 'Dear {{hrName}},\n\nI am writing to apply for the {{position}} position. As a dedicated frontend developer with a passion for creating intuitive user experiences, I believe I have the skills necessary for this role. I am proficient in HTML, CSS, JavaScript, and modern frameworks like React.\n\nI am eager to bring my skills to {{company}} and contribute to your team. My resume is attached.\n\nSincerely,\n{{name}}' },
           { _id: '7', name: 'Backend Application', position: 'Backend Developer', subject: 'Backend Developer Position at {{company}}', content: 'Dear {{hrName}},\n\nI am submitting my application for the {{position}} position at {{company}}. I have a solid background in server-side development, with expertise in Node.js, database design, and API development. I am experienced in building secure and scalable backend systems.\n\nI would be a valuable addition to your team. My resume is attached.\n\nBest regards,\n{{name}}' },
         ]);
-        const credentialsRes = await axios.get('/credentials');
+        const credentialsRes = await api.get('/credentials');
         setCredentials(credentialsRes.data.data);
         if (credentialsRes.data.data.length > 0) {
           setFormData(prev => ({ ...prev, credentialId: credentialsRes.data.data[0]._id }));
@@ -127,10 +130,10 @@ const SingleEmail = () => {
   const personalizedText = (text) => {
     if (!text) return '';
     return text
+      .replace(/{{hrName}}/g, formData.hrName || '[Hiring Manager]')
+      .replace(/{{name}}/g, formData.senderName || user?.name || '[Your Name]')
       .replace(/{{company}}/g, formData.company || '[Company]')
-      .replace(/{{position}}/g, formData.position || '[Position]')
-      .replace(/{{hrName}}/g, formData.hrName || 'Hiring Manager')
-      .replace(/{{name}}/g, user?.name || 'Applicant');
+      .replace(/{{position}}/g, formData.position || '[Position]');
   };
 
   const handleSubmit = async (e) => {
@@ -146,12 +149,13 @@ const SingleEmail = () => {
     emailData.append('hrName', formData.hrName);
     emailData.append('company', formData.company);
     emailData.append('position', formData.position);
+    emailData.append('senderName', formData.senderName);
     if (resume) {
       emailData.append('resume', resume);
     }
 
     try {
-      await axios.post('/emails/send-single', emailData, {
+      await api.post('/emails/send-single', emailData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -167,7 +171,9 @@ const SingleEmail = () => {
         subject: '',
         content: '',
         credentialId: credentials.length > 0 ? credentials[0]._id : '',
-        templateId: ''
+        templateId: '',
+        prompt: '',
+        senderName: user?.name || ''
       });
       setResume(null);
       setFilteredTemplates([]);
@@ -181,17 +187,29 @@ const SingleEmail = () => {
     }
   };
 
-  return (
-    <div className="bg-background min-h-screen">
-      <Toaster position="bottom-right" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold text-text-primary">Send Single Email</h1>
-        <p className="text-text-secondary mt-1 mb-8">Craft and send a personalized email to one recipient.</p>
+  // Handler for AI Personalization
+  const handleAIPersonalize = async () => {
+    setAiLoading(true);
+    try {
+      const res = await api.post('/emails/ai/personalize-email', { ...formData });
+      setFormData(prev => ({ ...prev, content: res.data.content }));
+      setAiLoading(false);
+    } catch (e) {
+      setAiLoading(false);
+      toast.error('AI personalization failed.');
+    }
+  };
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+  return (
+    <div className="bg-background min-h-screen flex flex-col h-full min-h-0">
+      <Toaster position="bottom-right" />
+      <div className="max-w-full sm:max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8 flex-1 flex flex-col min-h-0">
+        <h1 className="text-xl sm:text-3xl font-bold text-text-primary">Send Single Email</h1>
+        <p className="text-text-secondary mt-1 mb-4 sm:mb-8 text-sm sm:text-base">Craft and send a personalized email to one recipient.</p>
+        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 flex-1 min-h-0">
           {/* Left Column: Form Fields */}
-          <div className="bg-card p-8 rounded-2xl shadow-lg space-y-6">
-            <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3">Email Details</h2>
+          <div className="bg-card p-2 sm:p-8 rounded-2xl shadow-lg space-y-4 sm:space-y-6 flex-1 min-h-0 flex flex-col">
+            <h2 className="text-lg sm:text-xl font-semibold text-text-primary border-b border-border pb-2 sm:pb-3">Email Details</h2>
             
             <CustomSelect
               value={formData.position}
@@ -211,8 +229,9 @@ const SingleEmail = () => {
             />
             
             <InputField id="company" name="company" type="text" placeholder="Company Name" value={formData.company} onChange={handleChange} icon={Building} />
-            <InputField id="hrName" name="hrName" type="text" placeholder="HR Name / Hiring Manager" value={formData.hrName} onChange={handleChange} icon={User} />
+            <InputField id="hrName" name="hrName" type="text" placeholder="Hiring Manager Name" value={formData.hrName} onChange={handleChange} icon={User} required={false} />
             <InputField id="to" name="to" type="email" placeholder="Recipient's Email Address" value={formData.to} onChange={handleChange} icon={Mail} />
+            <InputField id="senderName" name="senderName" type="text" placeholder="Your Name (Sender)" value={formData.senderName} onChange={handleChange} icon={User} required={false} />
 
             <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 pt-4">Your Credentials</h2>
             <CustomSelect
@@ -232,15 +251,47 @@ const SingleEmail = () => {
               <input id="resume" name="resume" type="file" onChange={(e) => setResume(e.target.files[0])} className="sr-only" />
               <p className="mt-1 text-xs text-text-secondary">{resume ? resume.name : 'PDF, DOC, DOCX up to 5MB'}</p>
             </div>
+
+            <div className="flex items-start gap-2">
+              <textarea
+                id="prompt"
+                name="prompt"
+                placeholder="e.g. Make it more persuasive, mention remote work, etc."
+                value={formData.prompt}
+                onChange={handleChange}
+                rows={2}
+                className="flex-1 resize-y min-h-[40px] max-h-[300px] overflow-y-auto p-2 bg-foreground border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+                style={{ lineHeight: '1.5' }}
+              />
+              <button
+                type="button"
+                onClick={handleAIPersonalize}
+                disabled={aiLoading}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1 mt-0.5"
+                title="Personalize with AI using this prompt"
+              >
+                <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
+
+            <textarea
+              id="content"
+              name="content"
+              rows={15}
+              placeholder="Write or edit your email here..."
+              value={formData.content}
+              onChange={handleChange}
+              className="w-full flex-grow p-4 bg-foreground border border-border rounded-lg font-mono text-sm"
+            />
           </div>
 
-          {/* Right Column: Preview & Submit */}
-          <div className="bg-card p-8 rounded-2xl shadow-lg space-y-4 flex flex-col h-full">
+          {/* Right Column: Content Editor & Preview */}
+          <div className="bg-card p-8 rounded-2xl shadow-lg flex flex-col flex-1 min-h-0">
             <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 flex items-center">
               <Eye className="mr-2 h-5 w-5" />
               Email Preview
             </h2>
-            <div className="space-y-4 flex-grow flex flex-col">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <div>
                 <label className="block text-sm font-medium text-text-secondary">To:</label>
                 <p className="mt-1 text-sm text-text-primary break-all">{formData.to || '...'}</p>
@@ -249,22 +300,23 @@ const SingleEmail = () => {
                 <label className="block text-sm font-medium text-text-secondary">Subject:</label>
                 <p className="mt-1 text-sm text-text-primary">{personalizedText(formData.subject) || '...'}</p>
               </div>
-              <div className="flex-grow flex flex-col min-h-[200px]">
+              <div>
                 <label className="block text-sm font-medium text-text-secondary">Content:</label>
-                <div 
-                  className="mt-1 p-4 h-full flex-grow border border-border rounded-lg text-sm text-text-primary overflow-y-auto"
-                  dangerouslySetInnerHTML={{ __html: personalizedText(formData.content).replace(/\n/g, '<br />') || '...' }}
+                <div
+                  className="mt-1 p-4 border border-border rounded-lg text-sm text-text-primary overflow-y-auto bg-background max-h-96"
+                  style={{ whiteSpace: 'pre-wrap' }}
+                  dangerouslySetInnerHTML={{ __html: personalizedText(formData.content) || '...' }}
                 />
               </div>
             </div>
-             <button
-                type="submit"
-                disabled={loading}
-                className="w-full mt-6 py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-              >
-                <Send className="inline-block mr-2 h-5 w-5" />
-                {loading ? 'Sending...' : 'Send Email'}
-              </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 mt-4"
+            >
+              <Send className="inline-block mr-2 h-5 w-5" />
+              {loading ? 'Sending...' : 'Send Email'}
+            </button>
           </div>
         </form>
       </div>

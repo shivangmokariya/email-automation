@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Type, Send, File as FileIcon, User, Eye, X } from 'lucide-react';
+import { Mail, Type, Send, File as FileIcon, User, Eye, X, Sparkles } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import CustomSelect from './CustomSelect';
 
@@ -20,13 +20,14 @@ const CustomEmail = () => {
   const [loading, setLoading] = useState(false);
   const [emailList, setEmailList] = useState([]); // For bulk mode - array of emails
   const [currentEmail, setCurrentEmail] = useState(''); // For bulk mode - current email input
+  const [aiLoading, setAiLoading] = useState(false);
 
   const credentialOptions = useMemo(() => credentials.map(c => ({ value: c._id, label: c.email })), [credentials]);
 
   useEffect(() => {
     const fetchCredentials = async () => {
       try {
-        const credentialsRes = await axios.get('/credentials');
+        const credentialsRes = await api.get('/credentials');
         setCredentials(credentialsRes.data.data);
         if (credentialsRes.data.data.length > 0) {
           setFormData(prev => ({ ...prev, credentialId: credentialsRes.data.data[0]._id }));
@@ -94,7 +95,7 @@ const CustomEmail = () => {
     try {
       if (sendMode === 'single') {
         emailData.append('to', formData.to);
-        await axios.post('/emails/send-single', emailData, {
+        await api.post('/emails/send-single', emailData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       } else { // bulk mode
@@ -105,7 +106,7 @@ const CustomEmail = () => {
         }
         emailData.append('campaignName', formData.campaignName);
         emailData.append('recipients', emailList.join('\n'));
-        await axios.post('/emails/send-bulk', emailData, {
+        await api.post('/emails/send-bulk', emailData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -134,8 +135,21 @@ const CustomEmail = () => {
     }
   };
 
+  // Handler for AI Personalization
+  const handleAIPersonalize = async () => {
+    setAiLoading(true);
+    try {
+      const res = await api.post('/emails/ai/personalize-email', { ...formData });
+      setFormData(prev => ({ ...prev, content: res.data.content }));
+      setAiLoading(false);
+    } catch (e) {
+      setAiLoading(false);
+      toast.error('AI personalization failed.');
+    }
+  };
+
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 h-full flex flex-col min-h-0">
       <Toaster position="bottom-right" />
       <div>
         <h1 className="text-3xl font-bold text-text-primary">Custom Email</h1>
@@ -158,9 +172,9 @@ const CustomEmail = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="flex flex-col md:flex-row gap-8 flex-1 min-h-0">
         {/* Left Column: Form Fields */}
-        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-6">
+        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-6 flex-1 min-h-0 flex flex-col">
           <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3">Email Details</h2>
           
           {sendMode === 'single' ? (
@@ -246,31 +260,56 @@ const CustomEmail = () => {
         </div>
 
         {/* Right Column: Content Editor */}
-        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-4 flex flex-col h-full">
+        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-4 flex-1 min-h-0 flex flex-col">
           <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 flex items-center">
             <Eye className="mr-2 h-5 w-5" />
             Email Content
           </h2>
-          <textarea
-            id="content"
-            name="content"
-            rows="15"
-            placeholder="Write your email here..."
-            value={formData.content}
-            onChange={handleChange}
-            required
-            className="w-full flex-grow p-4 bg-foreground border border-border rounded-lg font-mono text-sm"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-auto py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-          >
-            <Send className="inline-block mr-2 h-5 w-5" />
-            {loading ? 'Sending...' : `Send ${sendMode === 'single' ? 'Email' : 'Bulk Emails'}`}
-          </button>
+          <div className="flex-1 min-h-0 flex flex-col">
+            <textarea
+              id="content"
+              name="content"
+              rows={15}
+              placeholder="Write your email here..."
+              value={formData.content}
+              onChange={handleChange}
+              required
+              className="w-full flex-grow p-4 bg-foreground border border-border rounded-lg font-mono text-sm mb-2"
+              style={{ minHeight: '120px', maxHeight: '300px' }}
+            />
+            <div className="flex items-start gap-2 mt-2">
+              <textarea
+                id="prompt"
+                name="prompt"
+                placeholder="e.g. Make it more persuasive, mention remote work, etc."
+                value={formData.prompt || ''}
+                onChange={handleChange}
+                rows={2}
+                className="flex-1 resize-y min-h-[40px] max-h-[120px] overflow-y-auto p-2 bg-foreground border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+                style={{ lineHeight: '1.5' }}
+              />
+              <button
+                type="button"
+                onClick={handleAIPersonalize}
+                disabled={aiLoading}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1 mt-0.5"
+                title="Personalize with AI using this prompt"
+              >
+                <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
-      </form>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full mt-auto py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+      >
+        <Send className="inline-block mr-2 h-5 w-5" />
+        {loading ? 'Sending...' : `Send ${sendMode === 'single' ? 'Email' : 'Bulk Emails'}`}
+      </button>
     </div>
   );
 };

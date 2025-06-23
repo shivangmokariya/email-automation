@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { Lock, Save, AlertCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -16,7 +16,7 @@ const ResetPassword = () => {
   useEffect(() => {
     const validateToken = async () => {
       try {
-        const response = await axios.get(`/auth/validate-reset-token/${token}`);
+        const response = await api.get(`/auth/validate-reset-token/${token}`);
         if (response.data.valid) {
           setTokenValid(true);
         } else {
@@ -50,7 +50,7 @@ const ResetPassword = () => {
     const toastId = toast.loading('Resetting your password...');
 
     try {
-      await axios.patch(`/auth/reset-password/${token}`, { password });
+      await api.patch(`/auth/reset-password/${token}`, { password });
       toast.success('Password has been reset successfully!', { id: toastId });
       
       // Reset form after successful reset

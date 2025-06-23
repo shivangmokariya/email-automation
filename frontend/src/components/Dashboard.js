@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
+import api from '../utils/api';
 import { Mail, Users, FileText, BarChart3, Send, TrendingUp, AlertTriangle } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
@@ -42,7 +42,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
-        const response = await axios.get('/campaigns/stats');
+        const response = await api.get('/campaigns/stats');
         setStats(response.data);
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error);
@@ -66,21 +66,21 @@ const Dashboard = () => {
 
   return (
     <div className="bg-background min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
         <div className="space-y-8">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-text-primary">Welcome back, {user?.name || 'User'}!</h1>
-              <p className="text-text-secondary mt-1">Here's a summary of your email activity.</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">Welcome back, {user?.name || 'User'}!</h1>
+              <p className="text-text-secondary mt-1 text-sm sm:text-base">Here's a summary of your email activity.</p>
             </div>
-            <Link to="/single-email" className="px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors">
+            <Link to="/single-email" className="w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground font-semibold rounded-lg shadow-sm hover:bg-primary/90 transition-colors text-center">
               New Email
             </Link>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             <StatCard title="Total Emails Sent" value={stats.totalEmails} icon={Send} color="blue" />
             <StatCard title="Successful Sends" value={stats.successfulSends} icon={TrendingUp} color="green" />
             <StatCard title="Failed Sends" value={stats.failedSends} icon={AlertTriangle} color="red" />
@@ -89,8 +89,8 @@ const Dashboard = () => {
 
           {/* Quick Actions */}
           <div>
-            <h2 className="text-xl font-semibold text-text-primary mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-text-primary mb-3 sm:mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {quickActions.map((action) => (
                 <QuickActionCard key={action.path} {...action} />
               ))}

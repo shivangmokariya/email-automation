@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import toast, { Toaster } from 'react-hot-toast';
 import { Plus, FileText, Edit, Trash2, Save, X, Clipboard, ClipboardCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -53,19 +53,29 @@ const Templates = () => {
   const [copied, setCopied] = useState(false);
   const { user } = useAuth();
 
-  const fetchTemplates = async () => {
-    try {
-      const { data } = await axios.get('/templates');
-      setTemplates(data.data);
-    } catch (error) {
-      toast.error('Failed to fetch templates.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchTemplates();
+    const fetchAndMergeTemplates = async () => {
+      try {
+        const { data } = await api.get('/templates');
+        // Merge defaultTemplates and user templates, avoiding duplicates
+        const userTemplates = data.data || [];
+        // Use a Set to avoid duplicates by a unique key
+        const seen = new Set();
+        const allTemplates = [...defaultTemplates, ...userTemplates].filter(t => {
+          const key = `${t.name}|${t.position}|${t.subject}|${t.content}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+        setTemplates(allTemplates);
+      } catch (error) {
+        toast.error('Failed to fetch templates.');
+        setTemplates(defaultTemplates); // fallback to mock only
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAndMergeTemplates();
   }, []);
 
   const handleSelectTemplate = (template) => {
@@ -88,12 +98,12 @@ const Templates = () => {
     const toastId = toast.loading(isNew ? 'Creating template...' : 'Saving template...');
     try {
       if (isNew) {
-        await axios.post('/templates', selectedTemplate);
+        await api.post('/templates', selectedTemplate);
       } else {
-        await axios.patch(`/templates/${selectedTemplate._id}`, selectedTemplate);
+        await api.patch(`/templates/${selectedTemplate._id}`, selectedTemplate);
       }
       toast.success('Template saved!', { id: toastId });
-      fetchTemplates();
+      fetchAndMergeTemplates();
       setIsEditing(false);
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save template.', { id: toastId });
@@ -104,9 +114,9 @@ const Templates = () => {
     if (window.confirm('Are you sure you want to delete this template?')) {
       const toastId = toast.loading('Deleting template...');
       try {
-        await axios.delete(`/templates/${templateId}`);
+        await api.delete(`/templates/${templateId}`);
         toast.success('Template deleted!', { id: toastId });
-        fetchTemplates();
+        fetchAndMergeTemplates();
         setSelectedTemplate(null);
       } catch (error) {
         toast.error('Failed to delete template.', { id: toastId });
@@ -128,23 +138,23 @@ const Templates = () => {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 text-text-primary bg-background">
+    <div className="p-2 sm:p-8 max-w-full sm:max-w-7xl mx-auto space-y-6 sm:space-y-8 text-text-primary bg-background">
       <Toaster position="bottom-right" />
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-6">
         <div>
-          <h1 className="text-3xl font-bold">Email Templates</h1>
-          <p className="text-text-secondary mt-1">Create and manage your email templates</p>
+          <h1 className="text-xl sm:text-3xl font-bold">Email Templates</h1>
+          <p className="text-text-secondary mt-1 text-sm sm:text-base">Create and manage your email templates</p>
         </div>
-        <button onClick={handleNewTemplate} className="flex items-center space-x-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
+        <button onClick={handleNewTemplate} className="flex items-center space-x-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors w-full sm:w-auto justify-center">
           <Plus className="h-5 w-5" />
           <span>New Template</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-card p-4 rounded-2xl shadow-lg">
-          <h2 className="text-xl font-semibold mb-4 px-2">Your Templates</h2>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+        <div className="lg:col-span-1 bg-card p-2 sm:p-4 rounded-2xl shadow-lg">
+          <h2 className="text-base sm:text-xl font-semibold mb-3 sm:mb-4 px-1 sm:px-2">Your Templates</h2>
+          <div className="space-y-3 sm:space-y-4 max-h-[50vh] sm:max-h-[60vh] overflow-y-auto pr-1 sm:pr-2">
             {Object.entries(groupedTemplates).map(([position, temps]) => (
               <div key={position}>
                 <h3 className="font-semibold text-text-secondary px-2 mb-2">{position}</h3>
@@ -173,8 +183,8 @@ const Templates = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="bg-card p-8 rounded-2xl shadow-lg h-full">
+        <div className="lg:col-span-2 mt-4 lg:mt-0">
+          <div className="bg-card p-4 sm:p-8 rounded-2xl shadow-lg h-full">
             {selectedTemplate ? (
               isEditing ? (
                 // EDITING VIEW

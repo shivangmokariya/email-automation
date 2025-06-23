@@ -14,6 +14,8 @@ const credentialRoutes = require('./routes/credential.routes');
 const campaignRoutes = require('./routes/campaign.routes');
 const emailRoutes = require('./routes/email.routes');
 const templateRoutes = require('./routes/template.routes');
+const http = require('http');
+const { Server } = require('socket.io');
 
 // Connect to the database
 connectDB();
@@ -26,7 +28,8 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: 'https://email-automation-sigma.vercel.app', // replace with your actual frontend URL
+  // origin: 'https://email-automation-sigma.vercel.app', // replace with your actual frontend URL
+  origin: 'http://localhost:3000', // replace with your actual frontend URL
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -79,6 +82,17 @@ app.use('/api/templates', templateRoutes);
 // Simple route for testing
 app.get('/api/test', (req, res) => res.json({ msg: 'API is running...' }));
 
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*', // You can restrict this to your frontend URL
+    methods: ['GET', 'POST', 'DELETE']
+  }
+});
+app.set('io', io);
+
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

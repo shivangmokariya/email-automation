@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../utils/api';
 import { Mail, Send } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -16,7 +16,7 @@ const ForgotPassword = () => {
     const toastId = toast.loading('Sending reset link...');
 
     try {
-      const response = await axios.post('/auth/forgot-password', { email });
+      const response = await api.post('/auth/forgot-password', { email });
       toast.success(response.data.message, { id: toastId });
       setMessage('If an account with that email exists, a password reset link has been sent.');
       

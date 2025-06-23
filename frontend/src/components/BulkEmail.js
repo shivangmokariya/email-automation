@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { Send, Upload, Plus, Trash2, Eye, EyeOff, Briefcase, FileText, User } from 'lucide-react';
+import { Send, Upload, Plus, Trash2, Eye, EyeOff, Briefcase, FileText, User, Sparkles } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import { getAllPositions } from '../utils/positions';
+import api from '../utils/api';
 
 // Always use mockTemplates for template selection and dropdowns
 const mockTemplates = [
@@ -20,6 +21,7 @@ const BulkEmail = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [recipients, setRecipients] = useState([{ id: Date.now(), email: '', name: '', company: '' }]);
   const [credentials, setCredentials] = useState([]); // Credentials can still be fetched if needed
+  const [aiLoading, setAiLoading] = useState(false);
 
   const { register, handleSubmit, watch, setValue, control, formState: { errors } } = useForm({
     defaultValues: {
@@ -47,11 +49,10 @@ const BulkEmail = () => {
   React.useEffect(() => {
     const fetchCredentials = async () => {
       try {
-        const credentialsRes = await fetch('/credentials');
-        const data = await credentialsRes.json();
-        setCredentials(data.data);
-        if (data.data.length > 0) {
-          setValue('credentialId', data.data[0]._id);
+        const credentialsRes = await api.get('/credentials');
+        setCredentials(credentialsRes.data.data);
+        if (credentialsRes.data.data.length > 0) {
+          setValue('credentialId', credentialsRes.data.data[0]._id);
         }
       } catch (error) {
         toast.error('Failed to load credentials.');
@@ -102,18 +103,30 @@ const BulkEmail = () => {
     toast.success("Form submitted! Check console for data.");
   };
 
-  return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-text-primary">Bulk Email Campaign</h1>
-        <p className="text-text-secondary mt-1">Send a personalized email campaign to multiple recipients.</p>
-      </div>
+  // Handler for AI Personalization
+  const handleAIPersonalize = async () => {
+    setAiLoading(true);
+    try {
+      const res = await api.post('/emails/ai/personalize-email', { content: watch('content'), prompt: watch('prompt') });
+      setValue('content', res.data.content);
+      setAiLoading(false);
+    } catch (e) {
+      setAiLoading(false);
+      toast.error('AI personalization failed.');
+    }
+  };
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+  return (
+    <div className="p-2 sm:p-8 max-w-full sm:max-w-7xl mx-auto space-y-6 sm:space-y-8 h-full flex flex-col min-h-0">
+      <div>
+        <h1 className="text-xl sm:text-3xl font-bold text-text-primary">Bulk Email Campaign</h1>
+        <p className="text-text-secondary mt-1 text-sm sm:text-base">Send a personalized email campaign to multiple recipients.</p>
+      </div>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 flex-1 flex flex-col min-h-0">
         {/* Section 1: Position, Template, Credentials */}
-        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-6">
-            <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3">Campaign Setup</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-card p-2 sm:p-8 rounded-2xl shadow-lg space-y-4 sm:space-y-6">
+            <h2 className="text-lg sm:text-xl font-semibold text-text-primary border-b border-border pb-2 sm:pb-3">Campaign Setup</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
             <CustomSelect
               value={watchedPosition}
               onChange={handlePositionChange}
@@ -148,30 +161,51 @@ const BulkEmail = () => {
         </div>
 
         {/* Section 2: Content */}
-        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-4">
-          <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3">Email Content</h2>
-          <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-text-secondary mb-1">Subject</label>
-            <input id="subject" {...register('subject', { required: true })} className="w-full p-2 bg-foreground border border-border rounded-md" />
-          </div>
-          <div>
-            <label htmlFor="content" className="block text-sm font-medium text-text-secondary mb-1">Content</label>
-            <textarea id="content" {...register('content', { required: true })} rows="8" className="w-full p-2 bg-foreground border border-border rounded-md font-mono text-sm"></textarea>
+        <div className="bg-card p-2 sm:p-8 rounded-2xl shadow-lg space-y-3 sm:space-y-4 flex-1 min-h-0 flex flex-col">
+          <h2 className="text-lg sm:text-xl font-semibold text-text-primary border-b border-border pb-2 sm:pb-3">Email Content</h2>
+          <div className="flex-1 min-h-0 flex flex-col">
+            <div>
+              <label htmlFor="subject" className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Subject</label>
+              <input id="subject" {...register('subject', { required: true })} className="w-full p-2 bg-foreground border border-border rounded-md" />
+            </div>
+            <div className="flex-1 min-h-0 flex flex-col">
+              <label htmlFor="content" className="block text-xs sm:text-sm font-medium text-text-secondary mb-1">Content</label>
+              <textarea id="content" {...register('content', { required: true })} rows="8" className="w-full p-2 bg-foreground border border-border rounded-md font-mono text-sm flex-1 min-h-0" style={{ minHeight: '120px', maxHeight: '300px' }}></textarea>
+            </div>
+            <div className="flex items-start gap-2 mt-2">
+              <textarea
+                id="prompt"
+                {...register('prompt')}
+                placeholder="e.g. Make it more persuasive, mention remote work, etc."
+                rows={2}
+                className="flex-1 resize-y min-h-[40px] max-h-[120px] overflow-y-auto p-2 bg-foreground border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+                style={{ lineHeight: '1.5' }}
+              />
+              <button
+                type="button"
+                onClick={handleAIPersonalize}
+                disabled={aiLoading}
+                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1 mt-0.5"
+                title="Personalize with AI using this prompt"
+              >
+                <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Section 3: Recipients */}
-        <div className="bg-card p-8 rounded-2xl shadow-lg space-y-4">
-          <div className="flex justify-between items-center border-b border-border pb-3">
-            <h2 className="text-xl font-semibold text-text-primary">Recipients</h2>
-            <button type="button" onClick={addRecipient} className="flex items-center space-x-2 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-sm hover:bg-primary/90">
+        <div className="bg-card p-2 sm:p-8 rounded-2xl shadow-lg space-y-3 sm:space-y-4 flex-1 min-h-0 flex flex-col">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-border pb-2 sm:pb-3 gap-2 sm:gap-0">
+            <h2 className="text-lg sm:text-xl font-semibold text-text-primary">Recipients</h2>
+            <button type="button" onClick={addRecipient} className="flex items-center space-x-2 bg-primary text-primary-foreground px-3 py-1 rounded-lg text-xs sm:text-sm hover:bg-primary/90 w-full sm:w-auto justify-center">
               <Plus className="h-4 w-4" />
               <span>Add</span>
             </button>
           </div>
-          <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+          <div className="space-y-2 sm:space-y-3 flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2">
             {recipients.map((recipient, index) => (
-              <div key={recipient.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-3 p-3 bg-foreground rounded-lg items-center">
+              <div key={recipient.id} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto] gap-2 sm:gap-3 p-2 sm:p-3 bg-foreground rounded-lg items-center">
                 <input type="email" placeholder="Recipient's Email" value={recipient.email} onChange={e => updateRecipient(recipient.id, 'email', e.target.value)} className="w-full p-2 bg-background border border-border rounded-md" required />
                 <input type="text" placeholder="Recipient's Name" value={recipient.name} onChange={e => updateRecipient(recipient.id, 'name', e.target.value)} className="w-full p-2 bg-background border border-border rounded-md" />
                 <input type="text" placeholder="Company Name" value={recipient.company} onChange={e => updateRecipient(recipient.id, 'company', e.target.value)} className="w-full p-2 bg-background border border-border rounded-md" required />
@@ -183,8 +217,8 @@ const BulkEmail = () => {
           </div>
         </div>
         
-        <div className="flex justify-end">
-           <button type="submit" disabled={isLoading} className="w-full md:w-auto flex items-center justify-center space-x-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
+        <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-0 mt-4">
+           <button type="submit" disabled={isLoading} className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">
             <Send className="h-5 w-5" />
             <span>{isLoading ? 'Sending...' : `Send Campaign to ${recipients.length} recipients`}</span>
           </button>

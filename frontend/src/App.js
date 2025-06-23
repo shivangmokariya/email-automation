@@ -16,6 +16,7 @@ import Profile from './components/Profile';
 import Credentials from './components/Credentials';
 import ResetPassword from './components/ResetPassword';
 import CustomEmail from './components/CustomEmail';
+import ChatWithAI from './components/ChatWithAI';
 import './App.css';
 
 function App() {
@@ -23,9 +24,9 @@ function App() {
     <ThemeProvider>
       <AuthProvider>
         <Router>
-          <div className="flex flex-col h-screen bg-background text-text-primary">
+          <div className="flex flex-col h-screen bg-background text-text-primary overflow-hidden">
             <Navbar />
-            <main className="flex-grow overflow-auto">
+            <main className="flex-grow">
               <Routes>
                 {/* Public routes */}
                 <Route path="/login" element={<Login />} />
@@ -44,6 +45,7 @@ function App() {
                   <Route path="profile" element={<Profile />} />
                   <Route path="credentials" element={<Credentials />} />
                   <Route path="custom-email" element={<CustomEmail />} />
+                  <Route path="chat-ai" element={<ChatWithAI />} />
                 </Route>
                 
                 {/* Catch all route */}
