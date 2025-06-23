@@ -17,7 +17,7 @@ const Profile = () => {
         if (user) {
             setFormData({ name: user.name, email: user.email });
             if (user.avatar) {
-                setAvatarPreview(`http://localhost:5000${user.avatar}`);
+                setAvatarPreview(`https://email-automation-purq.onrender.com${user.avatar}`);
             } else {
                 setAvatarPreview(`https://ui-avatars.com/api/?name=${user.name}&background=4f46e5&color=fff&size=128`);
             }
