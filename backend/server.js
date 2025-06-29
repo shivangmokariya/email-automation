@@ -28,8 +28,10 @@ app.set('trust proxy', 1);
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  // origin: 'https://email-automation-sigma.vercel.app', // replace with your actual frontend URL
-  origin: 'http://localhost:3000', // replace with your actual frontend URL
+  origin: [
+    'http://localhost:3000',
+    'https://email-automation-sigma.vercel.app'
+  ],
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
