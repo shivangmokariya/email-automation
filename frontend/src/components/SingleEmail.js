@@ -201,125 +201,101 @@ const SingleEmail = () => {
   };
 
   return (
-    <div className="bg-background min-h-screen flex flex-col h-full min-h-0">
+    <div className="min-h-screen w-full bg-background flex flex-col items-center">
       <Toaster position="bottom-right" />
-      <div className="max-w-full sm:max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8 flex-1 flex flex-col min-h-0">
-        <h1 className="text-xl sm:text-3xl font-bold text-text-primary">Send Single Email</h1>
-        <p className="text-text-secondary mt-1 mb-4 sm:mb-8 text-sm sm:text-base">Craft and send a personalized email to one recipient.</p>
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-8 flex-1 min-h-0">
-          {/* Left Column: Form Fields */}
-          <div className="bg-card p-2 sm:p-8 rounded-2xl shadow-lg space-y-4 sm:space-y-6 flex-1 min-h-0 flex flex-col">
-            <h2 className="text-lg sm:text-xl font-semibold text-text-primary border-b border-border pb-2 sm:pb-3">Email Details</h2>
-            
-            <CustomSelect
-              value={formData.position}
-              onChange={handlePositionChange}
-              options={positionOptions}
-              placeholder="-- Select a Position --"
-              icon={Briefcase}
-            />
+      <h1 className="text-xl sm:text-3xl font-bold text-text-primary mt-8">Send Single Email</h1>
+      <p className="text-text-secondary mt-1 mb-4 sm:mb-8 text-sm sm:text-base">Craft and send a personalized email to one recipient.</p>
+      <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row gap-6 lg:gap-10 w-full max-w-4xl px-2 md:px-8 pb-8">
+        {/* Email Details Form */}
+        <div className="w-full lg:w-1/2 bg-card rounded-2xl shadow-lg p-6 space-y-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-text-primary border-b border-border pb-2 sm:pb-3">Email Details</h2>
+          
+          <CustomSelect
+            value={formData.position}
+            onChange={handlePositionChange}
+            options={positionOptions}
+            placeholder="-- Select a Position --"
+            icon={Briefcase}
+          />
 
-            <CustomSelect
-              value={formData.templateId}
-              onChange={handleTemplateChange}
-              options={templateOptions}
-              placeholder="-- Select a Template --"
-              icon={TemplateIcon}
-              disabled={!formData.position}
-            />
-            
-            <InputField id="company" name="company" type="text" placeholder="Company Name" value={formData.company} onChange={handleChange} icon={Building} />
-            <InputField id="hrName" name="hrName" type="text" placeholder="Hiring Manager Name" value={formData.hrName} onChange={handleChange} icon={User} required={false} />
-            <InputField id="to" name="to" type="email" placeholder="Recipient's Email Address" value={formData.to} onChange={handleChange} icon={Mail} />
-            <InputField id="senderName" name="senderName" type="text" placeholder="Your Name (Sender)" value={formData.senderName} onChange={handleChange} icon={User} required={false} />
+          <CustomSelect
+            value={formData.templateId}
+            onChange={handleTemplateChange}
+            options={templateOptions}
+            placeholder="-- Select a Template --"
+            icon={TemplateIcon}
+            disabled={!formData.position}
+          />
+          
+          <InputField id="company" name="company" type="text" placeholder="Company Name" value={formData.company} onChange={handleChange} icon={Building} />
+          <InputField id="hrName" name="hrName" type="text" placeholder="Hiring Manager Name" value={formData.hrName} onChange={handleChange} icon={User} required={false} />
+          <InputField id="to" name="to" type="email" placeholder="Recipient's Email Address" value={formData.to} onChange={handleChange} icon={Mail} />
+          <InputField id="senderName" name="senderName" type="text" placeholder="Your Name (Sender)" value={formData.senderName} onChange={handleChange} icon={User} required={false} />
 
-            <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 pt-4">Your Credentials</h2>
-            <CustomSelect
-              value={formData.credentialId}
-              onChange={(value) => setFormData(prev => ({ ...prev, credentialId: value }))}
-              options={credentialOptions}
-              placeholder="-- Select a Credential --"
-              icon={User}
-            />
+          <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 pt-4">Your Credentials</h2>
+          <CustomSelect
+            value={formData.credentialId}
+            onChange={(value) => setFormData(prev => ({ ...prev, credentialId: value }))}
+            options={credentialOptions}
+            placeholder="-- Select a Credential --"
+            icon={User}
+          />
 
-            <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 pt-4">Resume</h2>
-            <div className="relative border-2 border-dashed border-border rounded-lg p-6 text-center">
-              <FileIcon className="mx-auto h-12 w-12 text-text-secondary" />
-              <label htmlFor="resume" className="mt-4 text-sm font-medium text-primary hover:underline cursor-pointer">
-                {resume ? 'Change file' : 'Upload a file'}
-              </label>
-              <input id="resume" name="resume" type="file" onChange={(e) => setResume(e.target.files[0])} className="sr-only" />
-              <p className="mt-1 text-xs text-text-secondary">{resume ? resume.name : 'PDF, DOC, DOCX up to 5MB'}</p>
-            </div>
-
-            <div className="flex items-start gap-2">
-              <textarea
-                id="prompt"
-                name="prompt"
-                placeholder="e.g. Make it more persuasive, mention remote work, etc."
-                value={formData.prompt}
-                onChange={handleChange}
-                rows={2}
-                className="flex-1 resize-y min-h-[40px] max-h-[300px] overflow-y-auto p-2 bg-foreground border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
-                style={{ lineHeight: '1.5' }}
-              />
-              <button
-                type="button"
-                onClick={handleAIPersonalize}
-                disabled={aiLoading}
-                className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1 mt-0.5"
-                title="Personalize with AI using this prompt"
-              >
-                <Sparkles className="h-4 w-4" />
-              </button>
-            </div>
-
-            <textarea
-              id="content"
-              name="content"
-              rows={15}
-              placeholder="Write or edit your email here..."
-              value={formData.content}
-              onChange={handleChange}
-              className="w-full flex-grow p-4 bg-foreground border border-border rounded-lg font-mono text-sm"
-            />
+          <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 pt-4">Resume</h2>
+          <div className="relative border-2 border-dashed border-border rounded-lg p-6 text-center">
+            <FileIcon className="mx-auto h-12 w-12 text-text-secondary" />
+            <label htmlFor="resume" className="mt-4 text-sm font-medium text-primary hover:underline cursor-pointer">
+              {resume ? 'Change file' : 'Upload a file'}
+            </label>
+            <input id="resume" name="resume" type="file" onChange={(e) => setResume(e.target.files[0])} className="sr-only" />
+            <p className="mt-1 text-xs text-text-secondary">{resume ? resume.name : 'PDF, DOC, DOCX up to 5MB'}</p>
           </div>
 
-          {/* Right Column: Content Editor & Preview */}
-          <div className="bg-card p-8 rounded-2xl shadow-lg flex flex-col flex-1 min-h-0">
-            <h2 className="text-xl font-semibold text-text-primary border-b border-border pb-3 flex items-center">
-              <Eye className="mr-2 h-5 w-5" />
-              Email Preview
-            </h2>
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary">To:</label>
-                <p className="mt-1 text-sm text-text-primary break-all">{formData.to || '...'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary">Subject:</label>
-                <p className="mt-1 text-sm text-text-primary">{personalizedText(formData.subject) || '...'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary">Content:</label>
-                <div
-                  className="mt-1 p-4 border border-border rounded-lg text-sm text-text-primary overflow-y-auto bg-background max-h-96"
-                  style={{ whiteSpace: 'pre-wrap' }}
-                  dangerouslySetInnerHTML={{ __html: personalizedText(formData.content) || '...' }}
-                />
-              </div>
-            </div>
+          <div className="flex items-start gap-2">
+            <textarea
+              id="prompt"
+              name="prompt"
+              placeholder="e.g. Make it more persuasive, mention remote work, etc."
+              value={formData.prompt}
+              onChange={handleChange}
+              rows={2}
+              className="flex-1 resize-y min-h-[40px] max-h-[300px] overflow-y-auto p-2 bg-foreground border border-border rounded-md text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-colors"
+              style={{ lineHeight: '1.5' }}
+            />
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-primary text-primary-foreground font-semibold rounded-lg shadow-md hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 mt-4"
+              type="button"
+              onClick={handleAIPersonalize}
+              disabled={aiLoading}
+              className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1 mt-0.5"
+              title="Personalize with AI using this prompt"
             >
-              <Send className="inline-block mr-2 h-5 w-5" />
-              {loading ? 'Sending...' : 'Send Email'}
+              <Sparkles className="h-4 w-4" />
             </button>
           </div>
-        </form>
-      </div>
+
+          <textarea
+            id="content"
+            name="content"
+            rows={15}
+            placeholder="Write or edit your email here..."
+            value={formData.content}
+            onChange={handleChange}
+            className="w-full flex-grow p-4 bg-foreground border border-border rounded-lg font-mono text-sm"
+          />
+        </div>
+
+        {/* Email Preview */}
+        <div className="w-full lg:w-1/2 bg-card rounded-2xl shadow-lg p-6 min-h-[300px] flex flex-col">
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2"><span className="inline-block"><Eye className="inline h-5 w-5" /></span> Email Preview</h2>
+          <div className="flex-1 space-y-2">
+            <div><span className="font-medium">To:</span> <span className="break-words">{formData.to || '...'}</span></div>
+            <div><span className="font-medium">Subject:</span> <span className="break-words">{personalizedText(formData.subject) || '...'}</span></div>
+            <div><span className="font-medium">Content:</span>
+              <div className="bg-foreground rounded-lg p-3 mt-1 min-h-[80px] whitespace-pre-line break-words">{personalizedText(formData.content) || '...'}</div>
+            </div>
+          </div>
+        </div>
+      </form>
     </div>
   );
 };

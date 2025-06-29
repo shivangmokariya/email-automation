@@ -29,6 +29,8 @@ MONGO_URI=mongodb://localhost:27017/resume-email-automation
 JWT_SECRET=your-super-secret-jwt-key-that-is-at-least-32-characters-long
 JWT_EXPIRES_IN=90d
 CRYPTO_KEY=your-super-secret-crypto-key-that-must-be-32-bytes-long
+# Optional: Set your backend URL for CORS or frontend integration
+BACKEND_URL=http://localhost:5000
 ```
 
 ### 3. Database Setup

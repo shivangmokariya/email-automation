@@ -24,6 +24,8 @@ const ChatWithAI = () => {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [editingChatId, setEditingChatId] = useState(null);
   const [editingName, setEditingName] = useState('');
+  const [showGreeting, setShowGreeting] = useState(true);
+  const lastCreatedChatId = useRef(null);
 
   console.log(openMenuId,"<<<openMenuId")
   useEffect(() => {
@@ -33,6 +35,33 @@ const ChatWithAI = () => {
     fetchRecentChats(0, true);
     // eslint-disable-next-line
   }, []);
+
+  useEffect(() => {
+    // Restore chatId from localStorage only on initial load
+    const storedChatId = localStorage.getItem('currentChatId');
+    if (
+      storedChatId &&
+      recentChats.some(
+        c => c._id === storedChatId && c.description && c.description.trim() !== '' && c.description !== '(New chat)'
+      )
+    ) {
+      setChatId(storedChatId);
+      handleSelectChat(storedChatId);
+    }
+  }, [recentChats]);
+
+  useEffect(() => {
+    // Remove empty chats, but NOT the currently active chat
+    recentChats.forEach((chat) => {
+      if (
+        (!chat.description || chat.description.trim() === '' || chat.description === '(New chat)') &&
+        chat._id !== chatId &&
+        chat._id !== lastCreatedChatId.current // Don't delete the just-created chat
+      ) {
+        api.delete(`/emails/ai/empty-chat/${chat._id}`);
+      }
+    });
+  }, [recentChats, chatId]);
 
   const fetchRecentChats = async (skip = chatSkip, initial = false) => {
     if (chatLoading || (!initial && !chatHasMore)) return;
@@ -59,6 +88,8 @@ const ChatWithAI = () => {
       const { data } = await api.post('/emails/ai/create-chat');
       setChatId(data.data._id);
       setMessages([]);
+      localStorage.removeItem('currentChatId');
+      lastCreatedChatId.current = data.data._id; // Track the new chat
       fetchRecentChats();
     } catch {}
   };
@@ -101,6 +132,13 @@ const ChatWithAI = () => {
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || streaming) return;
+    lastCreatedChatId.current = null; // User has interacted, clear protection
+    const greeting = `Hello,${user?.name ? ' ' + user.name.toLowerCase() : ''}`;
+    if (input.trim().toLowerCase() === greeting) {
+      setInput('');
+      return;
+    }
+    setShowGreeting(false);
     setMessages((prev) => [...prev, { role: 'user', content: input }]);
     setStreaming(true);
     setError(null);
@@ -373,8 +411,14 @@ const ChatWithAI = () => {
             <span className="text-xl font-semibold">MailGenie</span>
           </div>
         </header>
-        <div className="flex-1 min-h-0 flex flex-col">
-          {!chatId ? (
+        {showGreeting && !messages.length ? (
+          <div className="flex flex-1 items-center justify-center">
+            <h1 className="text-4xl sm:text-5xl font-bold text-center bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
+              Hello{user?.name ? `, ${user.name}` : ''}
+            </h1>
+          </div>
+        ) : (
+          !chatId ? (
             <div className="flex flex-1 items-center justify-center">
               <h1 className="text-4xl sm:text-5xl font-bold text-center bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-8">
                 Hello{user?.name ? `, ${user.name}` : ''}
@@ -422,28 +466,28 @@ const ChatWithAI = () => {
                 <div ref={messagesEndRef} />
               </div>
             </div>
-          )}
-          <footer className="w-full flex justify-center items-center pb-4 pt-2 flex-shrink-0 bg-transparent">
-            <form
-              className="bg-[#232329] rounded-2xl flex items-center px-6 py-4 w-full max-w-2xl shadow-lg"
-              onSubmit={sendMessage}
-            >
-              <input
-                type="text"
-                placeholder="Ask MailGenie"
-                className="flex-1 bg-transparent outline-none text-lg placeholder-gray-400"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={!chatId}
-              />
-              <button
-                className="ml-2 text-2xl text-gray-400 hover:text-white"
-                type="submit"
-                disabled={!chatId || !input.trim()}
-              >＋</button>
-            </form>
-          </footer>
-        </div>
+          )
+        )}
+        <footer className="w-full flex justify-center items-center pb-4 pt-2 flex-shrink-0 bg-transparent">
+          <form
+            className="bg-[#232329] rounded-2xl flex items-center px-6 py-4 w-full max-w-2xl shadow-lg"
+            onSubmit={sendMessage}
+          >
+            <input
+              type="text"
+              placeholder="Ask MailGenie"
+              className="flex-1 bg-transparent outline-none text-lg placeholder-gray-400"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={!chatId}
+            />
+            <button
+              className="ml-2 text-2xl text-gray-400 hover:text-white"
+              type="submit"
+              disabled={!chatId || !input.trim()}
+            >＋</button>
+          </form>
+        </footer>
       </main>
     </div>
   );
